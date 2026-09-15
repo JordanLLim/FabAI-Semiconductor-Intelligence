@@ -4,18 +4,17 @@ AI-powered semiconductor wafer defect intelligence and fab investigation platfor
 
 The project separates **real wafer evidence** from **simulated operational storytelling**. WM-811K is used for wafer maps and defect labels; live equipment telemetry, maintenance histories, and intervention outcomes are not claimed as measured WM-811K data.
 
-## Current scope
+## Implemented now
 
-- WM-811K loader and repository layer
-- FastAPI backend
-- Interactive wafer-map command center
-- Engineered-feature ML baseline
-- Reproducible training/evaluation pipeline
+- Validated WM-811K pickle loader and repository layer
+- FastAPI REST backend with health, dataset, list and detail endpoints
+- Interactive wafer-map command center that runs in labelled demo mode when data is absent
+- Nine-feature Random Forest baseline with class balancing
+- Reproducible train/test evaluation pipeline and persisted artifacts
 - Macro-F1, balanced accuracy, per-class report and confusion matrix
-- Dataset profiling
-- Docker / Docker Compose
-- GitHub Actions CI
-- Architecture and interview decision notes
+- Dataset profiling CLI
+- Docker / Docker Compose and GitHub Actions CI
+- API and feature extraction tests
 
 ## Planned path
 
@@ -38,7 +37,18 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Then open `http://localhost:8000`.
+Then open `http://localhost:8000`. Without the dataset, the application intentionally
+starts in `demo` mode using visibly labelled simulated wafer maps. API documentation is
+available at `http://localhost:8000/docs`.
+
+## API
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/health` | Service health, dataset availability and provenance mode |
+| `GET /api/dataset/summary` | Class and split distributions |
+| `GET /api/wafers` | Paginated wafer summaries with optional class filter |
+| `GET /api/wafers/{wafer_id}` | Wafer map and engineered inspection signals |
 
 ## Train baseline
 
@@ -47,7 +57,17 @@ python scripts/profile_dataset.py
 python scripts/train.py
 ```
 
-Model metrics are generated from the actual local dataset and are never hard-coded.
+Model metrics are written to `artifacts/metrics.json` and the fitted pipeline to
+`artifacts/baseline.joblib`. Metrics are generated from the actual local dataset and are
+never hard-coded.
+
+## Test
+
+```bash
+pip install -r requirements-dev.txt
+ruff check .
+pytest -q
+```
 
 ## Evaluation principles
 

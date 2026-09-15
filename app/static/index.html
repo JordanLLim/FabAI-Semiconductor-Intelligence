@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FAB.AI Command Center</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#071018;color:#e8f2f7}
+    body{margin:0;background:radial-gradient(circle at 15% 10%,#123347 0,transparent 38%),#071018;min-height:100vh}
+    header,main{max-width:1180px;margin:auto;padding:28px} header{display:flex;justify-content:space-between;align-items:center}
+    .brand{font-weight:800;letter-spacing:.15em}.tag,.muted{color:#7f9bab}.tag{border:1px solid #2b566b;padding:6px 10px;border-radius:999px}
+    .grid{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}.panel{background:#0b1822dd;border:1px solid #1d3645;border-radius:18px;padding:20px;box-shadow:0 16px 40px #0006}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.stat strong{display:block;font-size:28px;color:#5eead4}.stat small{color:#86a4b4}
+    canvas{width:min(100%,560px);image-rendering:pixelated;background:#03090d;border-radius:12px}.wafer-list{display:grid;gap:9px;max-height:540px;overflow:auto}
+    button{width:100%;text-align:left;background:#102633;color:#dcecf4;border:1px solid #24495b;border-radius:10px;padding:11px;cursor:pointer}button:hover{border-color:#5eead4}
+    .warning{color:#facc15;font-size:13px}.label{color:#5eead4;font-weight:700}dl{display:grid;grid-template-columns:1fr 1fr;gap:8px}dd{margin:0;text-align:right}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header><div class="brand">FAB.AI</div><div class="tag">WAFER INTELLIGENCE</div></header>
+  <main>
+    <div class="stats"><div class="panel stat"><small>Wafers indexed</small><strong id="count">—</strong></div><div class="panel stat"><small>Failure classes</small><strong id="classes">—</strong></div><div class="panel stat"><small>Runtime mode</small><strong id="mode">—</strong></div></div>
+    <div class="grid"><section class="panel"><p class="muted">Selected wafer</p><h2 id="title">Loading…</h2><canvas id="map" width="512" height="512"></canvas><p id="source" class="warning"></p></section>
+    <aside class="panel"><h3>Inspection queue</h3><div id="list" class="wafer-list"></div><h3>Signals</h3><dl id="features"></dl></aside></div>
+  </main>
+  <script>
+    const colors=['#061018','#4b6472','#fb7185'];
+    async function select(id){const r=await fetch('/api/wafers/'+id);const w=await r.json();document.querySelector('#title').innerHTML=`${w.wafer_id} · <span class="label">${w.failure_type}</span>`;document.querySelector('#source').textContent=w.data_source==='simulated_demo'?'DEMO MODE — simulated wafer map, not measured fab data':'Source: public WM-811K dataset';const c=document.querySelector('#map'),ctx=c.getContext('2d'),h=w.wafer_map.length,cw=c.width/w.wafer_map[0].length,ch=c.height/h;w.wafer_map.forEach((row,y)=>row.forEach((v,x)=>{ctx.fillStyle=colors[v]||colors[0];ctx.fillRect(x*cw,y*ch,Math.ceil(cw),Math.ceil(ch))}));document.querySelector('#features').innerHTML=Object.entries(w.features).map(([k,v])=>`<dt class="muted">${k.replaceAll('_',' ')}</dt><dd>${Number(v).toFixed(3)}</dd>`).join('')}
+    async function init(){const [s,wr]=await Promise.all([fetch('/api/dataset/summary'),fetch('/api/wafers?limit=20')]);const summary=await s.json(),wafers=await wr.json();count.textContent=summary.wafer_count.toLocaleString();classes.textContent=Object.keys(summary.class_distribution).length;mode.textContent=summary.data_mode.toUpperCase();list.innerHTML=wafers.map(w=>`<button onclick="select('${w.wafer_id}')"><span class="label">${w.failure_type}</span> · ${w.wafer_id}<br><span class="muted">${(w.failure_rate*100).toFixed(1)}% failing dies</span></button>`).join('');if(wafers.length)select(wafers[0].wafer_id)}init();
+  </script>
+</body>
+</html>
