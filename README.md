@@ -49,6 +49,8 @@ available at `http://localhost:8000/docs`.
 | `GET /api/dataset/summary` | Class and split distributions |
 | `GET /api/wafers` | Paginated wafer summaries with optional class filter |
 | `GET /api/wafers/{wafer_id}` | Wafer map and engineered inspection signals |
+| `GET /api/models/baseline/status` | Whether a trained artifact is available |
+| `GET /api/wafers/{wafer_id}/prediction` | Predicted class, confidence and probabilities |
 
 ## Train baseline
 
@@ -60,6 +62,10 @@ python scripts/train.py
 Model metrics are written to `artifacts/metrics.json` and the fitted pipeline to
 `artifacts/baseline.joblib`. Metrics are generated from the actual local dataset and are
 never hard-coded.
+
+The evaluator prefers WM-811K's provided training/test labels when both partitions cover
+all retained classes. If those labels are incomplete, it records use of a deterministic
+stratified fallback in both `metrics.json` and the serialized model metadata.
 
 ## Test
 
