@@ -4,12 +4,21 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
 
-from app.schemas import DatasetSummary, HealthResponse, WaferDetail, WaferSummary
+from app.schemas import (
+    DatasetSummary,
+    HealthResponse,
+    ModelStatus,
+    PredictionResponse,
+    WaferDetail,
+    WaferSummary,
+)
 from src.data.repository import WaferRecord, WaferRepository
 from src.features.wafer import extract_features
+from src.models.registry import ModelRegistry
 
 DATASET_PATH = Path("data/raw/LSWMD.pkl")
 repository = WaferRepository(DATASET_PATH)
+model_registry = ModelRegistry(Path("artifacts/baseline.joblib"))
 app = FastAPI(title="FAB.AI Semiconductor Intelligence", version="0.1.0")
 
 
@@ -47,6 +56,14 @@ def dataset_summary() -> DatasetSummary:
     )
 
 
+@app.get("/api/models/baseline/status", response_model=ModelStatus)
+def model_status() -> ModelStatus:
+    return ModelStatus(
+        available=model_registry.available,
+        artifact_path=str(model_registry.artifact_path),
+    )
+
+
 @app.get("/api/wafers", response_model=list[WaferSummary])
 def list_wafers(
     failure_type: str | None = None,
@@ -72,7 +89,19 @@ def get_wafer(wafer_id: str) -> WaferDetail:
     )
 
 
+@app.get("/api/wafers/{wafer_id}/prediction", response_model=PredictionResponse)
+def predict_wafer(wafer_id: str) -> PredictionResponse:
+    record = repository.get(wafer_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Wafer not found")
+    if not model_registry.available:
+        raise HTTPException(
+            status_code=503,
+            detail="No trained model artifact. Run python scripts/train.py on WM-811K first.",
+        )
+    return PredictionResponse(wafer_id=wafer_id, **model_registry.predict(record))
+
+
 @app.get("/", response_class=HTMLResponse)
 def command_center() -> str:
     return Path("app/static/index.html").read_text(encoding="utf-8")
-

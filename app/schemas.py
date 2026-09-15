@@ -32,3 +32,16 @@ class DatasetSummary(BaseModel):
     class_distribution: dict[str, int]
     split_distribution: dict[str, int]
 
+
+class ModelStatus(BaseModel):
+    available: bool
+    artifact_path: str
+
+
+class PredictionResponse(BaseModel):
+    wafer_id: str
+    predicted_failure_type: str
+    confidence: float = Field(ge=0, le=1)
+    class_probabilities: dict[str, float]
+    model_type: str
+    training_metadata: dict

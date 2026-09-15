@@ -6,10 +6,10 @@ import joblib
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import balanced_accuracy_score, classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
 
 from src.data.repository import WaferRecord
 from src.features.wafer import extract_features
+from src.models.split import make_split
 
 
 def feature_matrix(records: list[WaferRecord]) -> tuple[np.ndarray, np.ndarray, list[str]]:
@@ -32,9 +32,10 @@ def train_baseline(records: list[WaferRecord], output_dir: Path) -> dict:
     if len(np.unique(labels)) < 2:
         raise ValueError("At least two classes with two samples each are required.")
 
-    x_train, x_test, y_train, y_test = train_test_split(
-        features, labels, test_size=0.2, random_state=42, stratify=labels
-    )
+    split_labels = np.asarray([record.split for record, selected in zip(labelled, keep, strict=True) if selected])
+    split = make_split(labels, split_labels)
+    x_train, x_test = features[split.train_indices], features[split.test_indices]
+    y_train, y_test = labels[split.train_indices], labels[split.test_indices]
     model = RandomForestClassifier(
         n_estimators=300, class_weight="balanced_subsample", random_state=42, n_jobs=-1
     )
@@ -44,6 +45,7 @@ def train_baseline(records: list[WaferRecord], output_dir: Path) -> dict:
     result = {
         "train_samples": len(y_train),
         "test_samples": len(y_test),
+        "split_strategy": split.strategy,
         "feature_names": columns,
         "macro_f1": report["macro avg"]["f1-score"],
         "balanced_accuracy": balanced_accuracy_score(y_test, predictions),
@@ -52,6 +54,19 @@ def train_baseline(records: list[WaferRecord], output_dir: Path) -> dict:
         "confusion_matrix": confusion_matrix(y_test, predictions, labels=model.classes_).tolist(),
     }
     output_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model": model, "feature_names": columns}, output_dir / "baseline.joblib")
+    joblib.dump(
+        {
+            "model": model,
+            "model_type": "RandomForestClassifier",
+            "feature_names": columns,
+            "training_metadata": {
+                "split_strategy": split.strategy,
+                "train_samples": len(y_train),
+                "test_samples": len(y_test),
+                "macro_f1": result["macro_f1"],
+                "balanced_accuracy": result["balanced_accuracy"],
+            },
+        },
+        output_dir / "baseline.joblib",
+    )
     return result
-

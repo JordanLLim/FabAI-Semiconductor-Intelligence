@@ -25,3 +25,14 @@ def test_wafer_round_trip() -> None:
 def test_missing_wafer_returns_404() -> None:
     assert client.get("/api/wafers/not-found").status_code == 404
 
+
+def test_model_status_is_explicit() -> None:
+    response = client.get("/api/models/baseline/status")
+    assert response.status_code == 200
+    assert response.json()["artifact_path"] == "artifacts/baseline.joblib"
+
+
+def test_prediction_without_artifact_is_not_faked() -> None:
+    wafers = client.get("/api/wafers?limit=1").json()
+    response = client.get(f"/api/wafers/{wafers[0]['wafer_id']}/prediction")
+    assert response.status_code == 503
