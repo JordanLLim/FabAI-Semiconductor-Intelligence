@@ -24,6 +24,23 @@ The project separates **real wafer evidence** from **simulated operational story
 
 CNN experiments and a richer React/Three.js interface are possible extensions, not current claims.
 
+## Real-data baseline results
+
+The current baseline was trained and evaluated locally on the real WM-811K file using its
+official split: 54,355 training wafers and 118,595 test wafers. Unlabelled records were excluded
+from supervised training and evaluation.
+
+| Metric | Result |
+| --- | ---: |
+| Accuracy | 0.8594 |
+| Macro-F1 | 0.4128 |
+| Balanced accuracy | 0.4391 |
+
+Accuracy is not treated as the headline metric: 110,701 of the 118,595 test wafers are labelled
+`none`. Macro-F1 and per-class recall expose the baseline's weak performance on rare spatial
+patterns. See [`docs/MODEL_RESULTS.md`](docs/MODEL_RESULTS.md) for the class-level results,
+confusion-matrix analysis and the next modelling hypothesis.
+
 ## Data setup
 
 Download the WM-811K dataset separately and place:
@@ -38,7 +55,7 @@ Raw data and trained artifacts are intentionally not committed.
 
 ```bash
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 Then open `http://localhost:8000`. Without the dataset, the application intentionally
@@ -52,6 +69,7 @@ available at `http://localhost:8000/docs`.
 | `GET /api/health` | Service health, dataset availability and provenance mode |
 | `GET /api/dataset/summary` | Class and split distributions |
 | `GET /api/wafers` | Paginated wafer summaries with optional class filter |
+| `GET /api/showcase` | Compact class-balanced inspection queue |
 | `GET /api/wafers/{wafer_id}` | Wafer map and engineered inspection signals |
 | `GET /api/models/baseline/status` | Whether a trained artifact is available |
 | `GET /api/wafers/{wafer_id}/prediction` | Predicted class, confidence and probabilities |
@@ -89,6 +107,16 @@ Similarity is computed from standardized engineered wafer-map features and is pr
 case retrieval, not proof that two wafers share a physical root cause. Investigation output is
 deterministic decision support grounded in the observed map and retrieved cases; it does not
 invent equipment telemetry, maintenance history or intervention outcomes absent from WM-811K.
+
+## Current boundary and next experiment
+
+This version proves the end-to-end system contract: validated ingestion, leakage-aware evaluation,
+persisted model metadata, API inference, explainable case retrieval and a human-facing review
+workflow. The nine-feature Random Forest is deliberately retained as an interpretable baseline,
+not presented as the final classifier. The next experiment is a spatial model/CNN comparison on
+the same official split, with class weighting and per-class error analysis. Process drift, SPC and
+root-cause attribution require separate process or equipment data and are not inferred from wafer
+maps alone.
 
 ## Disclaimer
 
