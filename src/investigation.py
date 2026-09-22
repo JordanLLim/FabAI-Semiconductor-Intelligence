@@ -24,11 +24,12 @@ class WaferSimilarityIndex:
 
     def __init__(self, records: list[WaferRecord], max_index_records: int = 20_000):
         self._all_by_id = {record.wafer_id: record for record in records}
-        if len(records) > max_index_records:
-            positions = np.linspace(0, len(records) - 1, max_index_records, dtype=int)
-            self.records = [records[int(position)] for position in positions]
+        labelled = [record for record in records if record.failure_type.lower() != "unknown"]
+        if len(labelled) > max_index_records:
+            positions = np.linspace(0, len(labelled) - 1, max_index_records, dtype=int)
+            self.records = [labelled[int(position)] for position in positions]
         else:
-            self.records = records
+            self.records = labelled
         rows = [extract_features(record.wafer_map) for record in self.records]
         self.feature_names = sorted(rows[0]) if rows else []
         matrix = np.asarray(
@@ -43,6 +44,7 @@ class WaferSimilarityIndex:
             self.mean = np.empty(0)
             self.scale = np.empty(0)
             self.matrix = matrix
+
     def search(self, wafer_id: str, limit: int = 5) -> list[SimilarWafer]:
         query_record = self._all_by_id.get(wafer_id)
         if query_record is None or not self.feature_names:

@@ -1,4 +1,4 @@
-from src.data.repository import build_demo_records
+from src.data.repository import WaferRecord, build_demo_records
 from src.investigation import WaferSimilarityIndex, build_investigation
 
 
@@ -18,3 +18,17 @@ def test_investigation_is_evidence_bounded() -> None:
     assert result["pattern"] == "Center"
     assert result["evidence"]["similar_case_count"] == 3
     assert "not equipment telemetry" in result["disclaimer"]
+
+
+def test_similarity_index_excludes_unknown_cases() -> None:
+    records = build_demo_records()
+    unknown = WaferRecord(
+        wafer_id="unknown-case",
+        wafer_map=records[0].wafer_map,
+        failure_type="unknown",
+        split="unassigned",
+        data_source="WM-811K",
+    )
+    index = WaferSimilarityIndex([unknown, *records])
+    matches = index.search(records[0].wafer_id, limit=10)
+    assert all(match.record.failure_type.lower() != "unknown" for match in matches)
