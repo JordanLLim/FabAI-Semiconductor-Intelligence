@@ -51,3 +51,13 @@ def test_similarity_and_investigation_workflow() -> None:
     assert body["wafer_id"] == wafer_id
     assert body["recommended_checks"]
     assert "not equipment telemetry" in body["disclaimer"]
+
+
+def test_showcase_is_labelled_and_class_balanced() -> None:
+    response = client.get("/api/showcase?per_class=2")
+    assert response.status_code == 200
+    wafers = response.json()
+    assert wafers
+    labels = [wafer["failure_type"] for wafer in wafers]
+    assert "unknown" not in {label.lower() for label in labels}
+    assert all(labels.count(label) <= 2 for label in set(labels))

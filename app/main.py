@@ -82,6 +82,20 @@ def list_wafers(
     return [summarize(record) for record in records[offset : offset + limit]]
 
 
+@app.get("/api/showcase", response_model=list[WaferSummary])
+def showcase_wafers(per_class: int = Query(2, ge=1, le=5)) -> list[WaferSummary]:
+    """Return a compact, class-balanced queue for the command-center demo."""
+    selected: list[WaferRecord] = []
+    counts: Counter[str] = Counter()
+    for record in repository.records:
+        label = record.failure_type
+        if label.lower() == "unknown" or counts[label] >= per_class:
+            continue
+        selected.append(record)
+        counts[label] += 1
+    return [summarize(record) for record in selected]
+
+
 @app.get("/api/wafers/{wafer_id}", response_model=WaferDetail)
 def get_wafer(wafer_id: str) -> WaferDetail:
     record = repository.get(wafer_id)
