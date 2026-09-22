@@ -15,10 +15,14 @@ The project separates **real wafer evidence** from **simulated operational story
 - Dataset profiling CLI
 - Docker / Docker Compose and GitHub Actions CI
 - API and feature extraction tests
+- Explainable similar-wafer retrieval over standardized engineered features
+- Evidence-bounded investigation reports with explicit root-cause limitations
 
 ## Planned path
 
-`WM-811K -> validation -> baseline -> CNN -> similarity retrieval -> AI investigation -> React/TypeScript -> Three.js digital twin -> deployment`
+`WM-811K -> validation -> baseline -> similarity retrieval -> investigation workflow -> deployment`
+
+CNN experiments and a richer React/Three.js interface are possible extensions, not current claims.
 
 ## Data setup
 
@@ -51,6 +55,8 @@ available at `http://localhost:8000/docs`.
 | `GET /api/wafers/{wafer_id}` | Wafer map and engineered inspection signals |
 | `GET /api/models/baseline/status` | Whether a trained artifact is available |
 | `GET /api/wafers/{wafer_id}/prediction` | Predicted class, confidence and probabilities |
+| `GET /api/wafers/{wafer_id}/similar` | Closest explainable feature-space cases |
+| `GET /api/wafers/{wafer_id}/investigation` | Pattern observation, evidence and recommended checks |
 
 ## Train baseline
 
@@ -78,6 +84,11 @@ pytest -q
 ## Evaluation principles
 
 WM-811K is class-imbalanced, so accuracy alone is not enough. This project reports macro-F1, balanced accuracy, per-class precision/recall/F1 and a confusion matrix. Data splitting happens before any future augmentation/resampling to reduce leakage risk.
+
+Similarity is computed from standardized engineered wafer-map features and is presented as
+case retrieval, not proof that two wafers share a physical root cause. Investigation output is
+deterministic decision support grounded in the observed map and retrieved cases; it does not
+invent equipment telemetry, maintenance history or intervention outcomes absent from WM-811K.
 
 ## Disclaimer
 
