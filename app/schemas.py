@@ -45,3 +45,23 @@ class PredictionResponse(BaseModel):
     class_probabilities: dict[str, float]
     model_type: str
     training_metadata: dict
+
+
+class SimilarWaferResponse(BaseModel):
+    wafer_id: str
+    failure_type: str
+    similarity: float = Field(ge=0, le=1)
+    feature_distance: float = Field(ge=0)
+    failure_rate: float = Field(ge=0, le=1)
+    data_source: Literal["WM-811K", "simulated_demo"]
+
+
+class InvestigationResponse(BaseModel):
+    wafer_id: str
+    pattern: str
+    severity: Literal["review", "high"]
+    observation: str
+    recommended_checks: list[str]
+    evidence: dict[str, float | int]
+    similar_case_ids: list[str]
+    disclaimer: str

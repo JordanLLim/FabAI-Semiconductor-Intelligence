@@ -7,18 +7,22 @@ from fastapi.responses import HTMLResponse
 from app.schemas import (
     DatasetSummary,
     HealthResponse,
+    InvestigationResponse,
     ModelStatus,
     PredictionResponse,
+    SimilarWaferResponse,
     WaferDetail,
     WaferSummary,
 )
 from src.data.repository import WaferRecord, WaferRepository
 from src.features.wafer import extract_features
+from src.investigation import WaferSimilarityIndex, build_investigation
 from src.models.registry import ModelRegistry
 
 DATASET_PATH = Path("data/raw/LSWMD.pkl")
 repository = WaferRepository(DATASET_PATH)
 model_registry = ModelRegistry(Path("artifacts/baseline.joblib"))
+similarity_index = WaferSimilarityIndex(repository.records)
 app = FastAPI(title="FAB.AI Semiconductor Intelligence", version="0.1.0")
 
 
@@ -100,6 +104,33 @@ def predict_wafer(wafer_id: str) -> PredictionResponse:
             detail="No trained model artifact. Run python scripts/train.py on WM-811K first.",
         )
     return PredictionResponse(wafer_id=wafer_id, **model_registry.predict(record))
+
+
+@app.get("/api/wafers/{wafer_id}/similar", response_model=list[SimilarWaferResponse])
+def similar_wafers(
+    wafer_id: str, limit: int = Query(5, ge=1, le=20)
+) -> list[SimilarWaferResponse]:
+    if not repository.get(wafer_id):
+        raise HTTPException(status_code=404, detail="Wafer not found")
+    return [
+        SimilarWaferResponse(
+            wafer_id=match.record.wafer_id,
+            failure_type=match.record.failure_type,
+            similarity=match.similarity,
+            feature_distance=match.distance,
+            failure_rate=extract_features(match.record.wafer_map)["failure_rate"],
+            data_source=match.record.data_source,
+        )
+        for match in similarity_index.search(wafer_id, limit)
+    ]
+
+
+@app.get("/api/wafers/{wafer_id}/investigation", response_model=InvestigationResponse)
+def investigate_wafer(wafer_id: str) -> InvestigationResponse:
+    record = repository.get(wafer_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Wafer not found")
+    return InvestigationResponse(**build_investigation(record, similarity_index.search(wafer_id, 5)))
 
 
 @app.get("/", response_class=HTMLResponse)

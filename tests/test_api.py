@@ -36,3 +36,18 @@ def test_prediction_without_artifact_is_not_faked() -> None:
     wafers = client.get("/api/wafers?limit=1").json()
     response = client.get(f"/api/wafers/{wafers[0]['wafer_id']}/prediction")
     assert response.status_code == 503
+
+
+def test_similarity_and_investigation_workflow() -> None:
+    wafer_id = client.get("/api/wafers?limit=1").json()[0]["wafer_id"]
+    similar = client.get(f"/api/wafers/{wafer_id}/similar?limit=3")
+    assert similar.status_code == 200
+    assert len(similar.json()) == 3
+    assert all(item["wafer_id"] != wafer_id for item in similar.json())
+
+    investigation = client.get(f"/api/wafers/{wafer_id}/investigation")
+    assert investigation.status_code == 200
+    body = investigation.json()
+    assert body["wafer_id"] == wafer_id
+    assert body["recommended_checks"]
+    assert "not equipment telemetry" in body["disclaimer"]
