@@ -29,7 +29,7 @@ def test_missing_wafer_returns_404() -> None:
 def test_model_status_is_explicit() -> None:
     response = client.get("/api/models/baseline/status")
     assert response.status_code == 200
-    assert response.json()["artifact_path"] == "artifacts/baseline.joblib"
+    assert response.json()["artifact_path"] == "artifacts/test-fixtures/not-present.joblib"
 
 
 def test_prediction_without_artifact_is_not_faked() -> None:

@@ -61,8 +61,8 @@ available at `http://localhost:8000/docs`.
 ## Train baseline
 
 ```bash
-python scripts/profile_dataset.py
-python scripts/train.py
+python -m scripts.profile_dataset
+python -m scripts.train
 ```
 
 Model metrics are written to `artifacts/metrics.json` and the fitted pipeline to

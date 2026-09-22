@@ -1,4 +1,5 @@
 from collections import Counter
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
@@ -19,9 +20,10 @@ from src.features.wafer import extract_features
 from src.investigation import WaferSimilarityIndex, build_investigation
 from src.models.registry import ModelRegistry
 
-DATASET_PATH = Path("data/raw/LSWMD.pkl")
+DATASET_PATH = Path(os.getenv("FABAI_DATASET_PATH", "data/raw/LSWMD.pkl"))
+MODEL_PATH = Path(os.getenv("FABAI_MODEL_PATH", "artifacts/baseline.joblib"))
 repository = WaferRepository(DATASET_PATH)
-model_registry = ModelRegistry(Path("artifacts/baseline.joblib"))
+model_registry = ModelRegistry(MODEL_PATH)
 similarity_index = WaferSimilarityIndex(repository.records)
 app = FastAPI(title="FAB.AI Semiconductor Intelligence", version="0.1.0")
 
@@ -64,7 +66,7 @@ def dataset_summary() -> DatasetSummary:
 def model_status() -> ModelStatus:
     return ModelStatus(
         available=model_registry.available,
-        artifact_path=str(model_registry.artifact_path),
+        artifact_path=model_registry.artifact_path.as_posix(),
     )
 
 
@@ -101,7 +103,7 @@ def predict_wafer(wafer_id: str) -> PredictionResponse:
     if not model_registry.available:
         raise HTTPException(
             status_code=503,
-            detail="No trained model artifact. Run python scripts/train.py on WM-811K first.",
+            detail="No trained model artifact. Run python -m scripts.train on WM-811K first.",
         )
     return PredictionResponse(wafer_id=wafer_id, **model_registry.predict(record))
 
