@@ -9,6 +9,7 @@ from app.schemas import (
     DatasetSummary,
     HealthResponse,
     InvestigationResponse,
+    ModelEvaluation,
     ModelStatus,
     PredictionResponse,
     SimilarWaferResponse,
@@ -68,6 +69,16 @@ def model_status() -> ModelStatus:
         available=model_registry.available,
         artifact_path=model_registry.artifact_path.as_posix(),
     )
+
+
+@app.get("/api/models/baseline/evaluation", response_model=ModelEvaluation)
+def model_evaluation() -> ModelEvaluation:
+    if not model_registry.available:
+        raise HTTPException(
+            status_code=503,
+            detail="No trained model artifact. Run python -m scripts.train on WM-811K first.",
+        )
+    return ModelEvaluation(**model_registry.evaluation())
 
 
 @app.get("/api/wafers", response_model=list[WaferSummary])

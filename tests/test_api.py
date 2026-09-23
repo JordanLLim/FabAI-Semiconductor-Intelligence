@@ -38,6 +38,11 @@ def test_prediction_without_artifact_is_not_faked() -> None:
     assert response.status_code == 503
 
 
+def test_evaluation_without_artifact_is_not_faked() -> None:
+    response = client.get("/api/models/baseline/evaluation")
+    assert response.status_code == 503
+
+
 def test_similarity_and_investigation_workflow() -> None:
     wafer_id = client.get("/api/wafers?limit=1").json()[0]["wafer_id"]
     similar = client.get(f"/api/wafers/{wafer_id}/similar?limit=3")

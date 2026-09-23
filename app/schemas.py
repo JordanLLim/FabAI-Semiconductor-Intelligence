@@ -38,9 +38,32 @@ class ModelStatus(BaseModel):
     artifact_path: str
 
 
+class ClassEvaluation(BaseModel):
+    precision: float
+    recall: float
+    f1: float
+    support: int
+
+
+class ModelEvaluation(BaseModel):
+    model_type: str
+    split_strategy: str
+    train_samples: int
+    test_samples: int
+    accuracy: float = Field(ge=0, le=1)
+    macro_f1: float = Field(ge=0, le=1)
+    balanced_accuracy: float = Field(ge=0, le=1)
+    weighted_f1: float = Field(ge=0, le=1)
+    labels: list[str]
+    per_class: dict[str, ClassEvaluation]
+    confusion_matrix: list[list[int]]
+
+
 class PredictionResponse(BaseModel):
     wafer_id: str
+    ground_truth: str
     predicted_failure_type: str
+    is_correct: bool
     confidence: float = Field(ge=0, le=1)
     class_probabilities: dict[str, float]
     model_type: str

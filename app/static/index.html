@@ -7,27 +7,136 @@
   <style>
     :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#071018;color:#e8f2f7}
     body{margin:0;background:radial-gradient(circle at 15% 10%,#123347 0,transparent 38%),#071018;min-height:100vh}
-    header,main{max-width:1280px;margin:auto;padding:20px 28px} header{display:flex;justify-content:space-between;align-items:center}
+    header,main{max-width:1280px;margin:auto;padding:20px 28px}header{display:flex;justify-content:space-between;align-items:center}
     .brand{font-weight:800;letter-spacing:.15em}.tag,.muted{color:#7f9bab}.tag{border:1px solid #2b566b;padding:6px 10px;border-radius:999px}
     .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.panel{background:#0b1822dd;border:1px solid #1d3645;border-radius:18px;padding:18px;box-shadow:0 16px 40px #0006}
     .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}.stat strong{display:block;font-size:24px;color:#5eead4}.stat small{color:#86a4b4}
     canvas{display:block;width:min(100%,460px);height:auto;margin:auto;image-rendering:pixelated;background:#03090d;border-radius:12px}.wafer-list{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:142px;overflow:auto}
     button{width:100%;text-align:left;background:#102633;color:#dcecf4;border:1px solid #24495b;border-radius:10px;padding:8px;cursor:pointer}button:hover{border-color:#5eead4}
-    h3{margin:13px 0 8px}.warning{color:#facc15;font-size:12px}.label{color:#5eead4;font-weight:700}.result{display:grid;grid-template-columns:1fr 1fr;gap:10px}.result div{background:#102633;border-radius:10px;padding:10px}.result small{display:block;color:#86a4b4}.result strong{color:#5eead4;font-size:18px}dl{display:grid;grid-template-columns:1fr 1fr;gap:8px}dd{margin:0;text-align:right}details{margin-top:10px}.compact{font-size:14px;line-height:1.35}
-    @media(max-width:800px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
+    h3{margin:13px 0 8px}.warning{color:#facc15;font-size:12px}.label{color:#5eead4;font-weight:700}.result{display:grid;grid-template-columns:1fr 1fr;gap:10px}.result div{background:#102633;border-radius:10px;padding:10px}.result small{display:block;color:#86a4b4}.result strong{color:#5eead4;font-size:18px}
+    dl{display:grid;grid-template-columns:1fr 1fr;gap:8px}dd{margin:0;text-align:right}details{margin-top:10px}.compact{font-size:14px;line-height:1.35}
+    .evaluation{margin-top:16px}.eval-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.eval-meta div{background:#102633;border-radius:10px;padding:10px}.eval-meta small{display:block;color:#86a4b4}.eval-meta strong{font-size:18px;color:#5eead4}
+    .table-wrap{overflow:auto;margin-top:14px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #1d3645;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}.error-note{margin-top:12px;color:#9bb4c2;font-size:13px}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.stats,.eval-meta{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
   <header><div class="brand">FAB.AI</div><div class="tag">WAFER INTELLIGENCE</div></header>
   <main>
-    <div class="stats"><div class="panel stat"><small>Wafers indexed</small><strong id="count">—</strong></div><div class="panel stat"><small>Labelled classes</small><strong id="classes">—</strong></div><div class="panel stat"><small>Macro-F1</small><strong id="macro">—</strong></div><div class="panel stat"><small>Balanced accuracy</small><strong id="balanced">—</strong></div><div class="panel stat"><small>Runtime mode</small><strong id="mode">—</strong></div></div>
-    <div class="grid"><section class="panel"><p class="muted">Selected wafer · Ground truth</p><h2 id="title">Loading…</h2><canvas id="map" width="512" height="512"></canvas><p id="source" class="warning"></p></section>
-    <aside class="panel"><h3>Inspection queue</h3><div id="list" class="wafer-list"></div><h3>Ground truth vs prediction</h3><div class="result"><div><small>Ground truth</small><strong id="groundTruth">—</strong></div><div><small>Prediction</small><strong id="prediction">Checking…</strong><br><span id="confidence" class="muted"></span></div></div><h3>Investigation assistant</h3><p id="investigation" class="muted compact">Select a wafer to generate an evidence-bounded review.</p><h3>Similar labelled cases</h3><div id="similar" class="wafer-list">—</div><details><summary>Engineered signals</summary><dl id="features"></dl></details></aside></div>
+    <div class="stats">
+      <div class="panel stat"><small>Wafers indexed</small><strong id="count">—</strong></div>
+      <div class="panel stat"><small>Labelled classes</small><strong id="classes">—</strong></div>
+      <div class="panel stat"><small>Macro-F1</small><strong id="macro">—</strong></div>
+      <div class="panel stat"><small>Balanced accuracy</small><strong id="balanced">—</strong></div>
+      <div class="panel stat"><small>Runtime mode</small><strong id="mode">—</strong></div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <p class="muted">Selected wafer · Ground truth</p>
+        <h2 id="title">Loading…</h2>
+        <canvas id="map" width="512" height="512"></canvas>
+        <p id="source" class="warning"></p>
+      </section>
+      <aside class="panel">
+        <h3>Inspection queue</h3><div id="list" class="wafer-list"></div>
+        <h3>Ground truth vs prediction</h3>
+        <div class="result">
+          <div><small>Ground truth</small><strong id="groundTruth">—</strong></div>
+          <div><small>Prediction</small><strong id="prediction">Checking…</strong><br><span id="confidence" class="muted"></span></div>
+        </div>
+        <p id="reviewStatus" class="compact muted"></p>
+        <h3>Investigation assistant</h3><p id="investigation" class="muted compact">Select a wafer to generate an evidence-bounded review.</p>
+        <h3>Similar labelled cases</h3><div id="similar" class="wafer-list">—</div>
+        <details><summary>Engineered signals</summary><dl id="features"></dl></details>
+      </aside>
+    </div>
+
+    <section class="panel evaluation">
+      <h2>Model evaluation</h2>
+      <p class="muted compact">Evaluation is calculated on the held-out official WM-811K test split stored with the model artifact.</p>
+      <div id="evalMeta" class="eval-meta"></div>
+      <div class="table-wrap"><table><thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th></tr></thead><tbody id="classMetrics"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table></div>
+      <p class="error-note">Use per-class recall and F1 to inspect minority-class behaviour; aggregate accuracy is dominated by the large <code>none</code> class.</p>
+    </section>
   </main>
+
   <script>
     const colors=['#061018','#4b6472','#fb7185'];
-    async function select(id){prediction.textContent='Checking…';confidence.textContent='';try{const [r,ir,sr,pr]=await Promise.all([fetch('/api/wafers/'+id),fetch(`/api/wafers/${id}/investigation`),fetch(`/api/wafers/${id}/similar?limit=3`),fetch(`/api/wafers/${id}/prediction`)]);const w=await r.json(),report=await ir.json(),matches=await sr.json();document.querySelector('#title').innerHTML=`${w.wafer_id} · <span class="label">${w.failure_type}</span>`;groundTruth.textContent=w.failure_type;document.querySelector('#source').textContent=w.data_source==='simulated_demo'?'DEMO MODE — simulated wafer map, not measured fab data':'Source: public WM-811K dataset';const c=document.querySelector('#map'),ctx=c.getContext('2d'),h=w.wafer_map.length,cw=c.width/w.wafer_map[0].length,ch=c.height/h;ctx.clearRect(0,0,c.width,c.height);w.wafer_map.forEach((row,y)=>row.forEach((v,x)=>{ctx.fillStyle=colors[v]||colors[0];ctx.fillRect(x*cw,y*ch,Math.ceil(cw),Math.ceil(ch))}));document.querySelector('#features').innerHTML=Object.entries(w.features).map(([k,v])=>`<dt class="muted">${k.replaceAll('_',' ')}</dt><dd>${Number(v).toFixed(3)}</dd>`).join('');investigation.innerHTML=`<span class="label">${report.severity.toUpperCase()}</span> · ${report.observation}<br>${report.recommended_checks.map(x=>`• ${x}`).join('<br>')}<br><small class="warning">${report.disclaimer}</small>`;similar.innerHTML=matches.map(m=>`<button onclick="select('${m.wafer_id}')"><span class="label">${m.failure_type}</span> · ${m.wafer_id}<br><span class="muted">${(m.similarity*100).toFixed(1)}% feature similarity</span></button>`).join('');if(pr.ok){const p=await pr.json();prediction.textContent=p.predicted_failure_type;confidence.textContent=`${(p.confidence*100).toFixed(1)}% confidence · ${p.model_type}`;macro.textContent=(p.training_metadata.macro_f1*100).toFixed(1)+'%';balanced.textContent=(p.training_metadata.balanced_accuracy*100).toFixed(1)+'%'}else{const e=await pr.json();prediction.textContent='Unavailable';confidence.textContent=e.detail||'Model request failed'}}catch(error){prediction.textContent='Request failed';confidence.textContent=String(error)}}
-    async function init(){const [s,wr]=await Promise.all([fetch('/api/dataset/summary'),fetch('/api/showcase?per_class=2')]);const summary=await s.json(),wafers=await wr.json(),labelledClasses=Object.keys(summary.class_distribution).filter(name=>name.toLowerCase()!=='unknown');count.textContent=summary.wafer_count.toLocaleString();classes.textContent=labelledClasses.length;mode.textContent=summary.data_mode.toUpperCase();list.innerHTML=wafers.map(w=>`<button onclick="select('${w.wafer_id}')"><span class="label">${w.failure_type}</span> · ${w.wafer_id}<br><span class="muted">${(w.failure_rate*100).toFixed(1)}% failing dies</span></button>`).join('');if(wafers.length)select(wafers.find(w=>w.failure_type.toLowerCase()!=='none')?.wafer_id||wafers[0].wafer_id)}init();
+
+    async function select(id){
+      prediction.textContent='Checking…';confidence.textContent='';reviewStatus.textContent='';
+      try{
+        const [r,ir,sr,pr]=await Promise.all([
+          fetch('/api/wafers/'+id),
+          fetch('/api/wafers/'+id+'/investigation'),
+          fetch('/api/wafers/'+id+'/similar?limit=3'),
+          fetch('/api/wafers/'+id+'/prediction')
+        ]);
+        const w=await r.json(),report=await ir.json(),matches=await sr.json();
+        title.innerHTML=`${w.wafer_id} · <span class="label">${w.failure_type}</span>`;
+        groundTruth.textContent=w.failure_type;
+        source.textContent=w.data_source==='simulated_demo'
+          ?'DEMO MODE — simulated wafer map, not measured fab data'
+          :'Source: public WM-811K dataset';
+
+        const c=map,ctx=c.getContext('2d'),h=w.wafer_map.length,cw=c.width/w.wafer_map[0].length,ch=c.height/h;
+        ctx.clearRect(0,0,c.width,c.height);
+        w.wafer_map.forEach((row,y)=>row.forEach((v,x)=>{
+          ctx.fillStyle=colors[v]||colors[0];ctx.fillRect(x*cw,y*ch,Math.ceil(cw),Math.ceil(ch))
+        }));
+
+        features.innerHTML=Object.entries(w.features).map(([k,v])=>`<dt class="muted">${k.replaceAll('_',' ')}</dt><dd>${Number(v).toFixed(3)}</dd>`).join('');
+        investigation.innerHTML=`<span class="label">${report.severity.toUpperCase()}</span> · ${report.observation}<br>${report.recommended_checks.map(x=>`• ${x}`).join('<br>')}<br><small class="warning">${report.disclaimer}</small>`;
+        similar.innerHTML=matches.map(m=>`<button onclick="select('${m.wafer_id}')"><span class="label">${m.failure_type}</span> · ${m.wafer_id}<br><span class="muted">${(m.similarity*100).toFixed(1)}% feature similarity</span></button>`).join('');
+
+        if(pr.ok){
+          const p=await pr.json();
+          prediction.textContent=p.predicted_failure_type;
+          confidence.textContent=`${(p.confidence*100).toFixed(1)}% confidence · ${p.model_type}`;
+          reviewStatus.textContent=p.is_correct?'✓ Prediction matches the labelled ground truth.':'⚠ Prediction differs from the labelled ground truth.';
+          reviewStatus.className='compact '+(p.is_correct?'label':'warning');
+          macro.textContent=(p.training_metadata.macro_f1*100).toFixed(1)+'%';
+          balanced.textContent=(p.training_metadata.balanced_accuracy*100).toFixed(1)+'%';
+        }else{
+          const e=await pr.json();prediction.textContent='Unavailable';confidence.textContent=e.detail||'Model request failed'
+        }
+      }catch(error){prediction.textContent='Request failed';confidence.textContent=String(error)}
+    }
+
+    async function loadEvaluation(){
+      try{
+        const r=await fetch('/api/models/baseline/evaluation');
+        if(!r.ok)throw new Error((await r.json()).detail||'Evaluation unavailable');
+        const e=await r.json();
+        evalMeta.innerHTML=[
+          ['Accuracy',(e.accuracy*100).toFixed(1)+'%'],
+          ['Macro-F1',(e.macro_f1*100).toFixed(1)+'%'],
+          ['Balanced accuracy',(e.balanced_accuracy*100).toFixed(1)+'%'],
+          ['Test samples',e.test_samples.toLocaleString()]
+        ].map(([k,v])=>`<div><small>${k}</small><strong>${v}</strong></div>`).join('');
+        classMetrics.innerHTML=e.labels.map(label=>{
+          const m=e.per_class[label];
+          return `<tr><td><span class="label">${label}</span></td><td>${(m.precision*100).toFixed(1)}%</td><td>${(m.recall*100).toFixed(1)}%</td><td>${(m.f1*100).toFixed(1)}%</td><td>${m.support.toLocaleString()}</td></tr>`
+        }).join('');
+        macro.textContent=(e.macro_f1*100).toFixed(1)+'%';
+        balanced.textContent=(e.balanced_accuracy*100).toFixed(1)+'%';
+      }catch(error){
+        evalMeta.innerHTML=`<div><small>Evaluation</small><strong>Unavailable</strong></div>`;
+        classMetrics.innerHTML=`<tr><td colspan="5" class="warning">${error.message}</td></tr>`;
+      }
+    }
+
+    async function init(){
+      const [s,wr]=await Promise.all([fetch('/api/dataset/summary'),fetch('/api/showcase?per_class=2')]);
+      const summary=await s.json(),wafers=await wr.json();
+      const labelledClasses=Object.keys(summary.class_distribution).filter(name=>name.toLowerCase()!=='unknown');
+      count.textContent=summary.wafer_count.toLocaleString();classes.textContent=labelledClasses.length;mode.textContent=summary.data_mode.toUpperCase();
+      list.innerHTML=wafers.map(w=>`<button onclick="select('${w.wafer_id}')"><span class="label">${w.failure_type}</span> · ${w.wafer_id}<br><span class="muted">${(w.failure_rate*100).toFixed(1)}% failing dies</span></button>`).join('');
+      await loadEvaluation();
+      if(wafers.length)select(wafers.find(w=>w.failure_type.toLowerCase()!=='none')?.wafer_id||wafers[0].wafer_id);
+    }
+    init();
   </script>
 </body>
 </html>

@@ -32,7 +32,9 @@ def train_baseline(records: list[WaferRecord], output_dir: Path) -> dict:
     if len(np.unique(labels)) < 2:
         raise ValueError("At least two classes with two samples each are required.")
 
-    split_labels = np.asarray([record.split for record, selected in zip(labelled, keep, strict=True) if selected])
+    split_labels = np.asarray(
+        [record.split for record, selected in zip(labelled, keep, strict=True) if selected]
+    )
     split = make_split(labels, split_labels)
     x_train, x_test = features[split.train_indices], features[split.test_indices]
     y_train, y_test = labels[split.train_indices], labels[split.test_indices]
@@ -42,16 +44,19 @@ def train_baseline(records: list[WaferRecord], output_dir: Path) -> dict:
     model.fit(x_train, y_train)
     predictions = model.predict(x_test)
     report = classification_report(y_test, predictions, output_dict=True, zero_division=0)
+    matrix = confusion_matrix(y_test, predictions, labels=model.classes_)
     result = {
         "train_samples": len(y_train),
         "test_samples": len(y_test),
         "split_strategy": split.strategy,
         "feature_names": columns,
+        "accuracy": float((predictions == y_test).mean()),
         "macro_f1": report["macro avg"]["f1-score"],
         "balanced_accuracy": balanced_accuracy_score(y_test, predictions),
+        "weighted_f1": report["weighted avg"]["f1-score"],
         "classification_report": report,
         "labels": model.classes_.tolist(),
-        "confusion_matrix": confusion_matrix(y_test, predictions, labels=model.classes_).tolist(),
+        "confusion_matrix": matrix.tolist(),
     }
     output_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(
@@ -63,8 +68,13 @@ def train_baseline(records: list[WaferRecord], output_dir: Path) -> dict:
                 "split_strategy": split.strategy,
                 "train_samples": len(y_train),
                 "test_samples": len(y_test),
+                "accuracy": result["accuracy"],
                 "macro_f1": result["macro_f1"],
                 "balanced_accuracy": result["balanced_accuracy"],
+                "weighted_f1": result["weighted_f1"],
+                "classification_report": report,
+                "labels": result["labels"],
+                "confusion_matrix": result["confusion_matrix"],
             },
         },
         output_dir / "baseline.joblib",
