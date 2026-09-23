@@ -19,10 +19,11 @@ The project separates **real wafer evidence** from **simulated operational story
 - Evidence-bounded investigation reports with explicit root-cause limitations
 - Model evaluation endpoint with per-class metrics
 - Prediction review that explicitly compares ground truth, prediction and correctness
+- Small spatial CNN experiment using the same official WM-811K split
 
 ## Planned path
 
-`WM-811K -> validation -> baseline -> evaluation -> similarity retrieval -> investigation workflow -> spatial-model comparison -> deployment`
+`WM-811K -> validation -> baseline -> evaluation -> spatial-model comparison -> similarity retrieval -> investigation workflow -> deployment`
 
 CNN experiments and a richer React/Three.js interface are possible extensions, not current claims.
 
@@ -85,6 +86,24 @@ The model artifact now stores the evaluation contract used by the dashboard: agg
 
 The evaluator prefers WM-811K's provided training/test labels when both partitions cover all retained classes. If those labels are incomplete, it records use of a deterministic stratified fallback in both `metrics.json` and the serialized model metadata.
 
+## Run the spatial experiment
+
+Install the pinned PyTorch dependency from `requirements.txt`, then run:
+
+```bash
+python -m scripts.train_cnn
+```
+
+The CNN normalizes variable-size wafer maps to a 32x32 spatial representation using nearest-neighbour sampling. It uses a compact three-block convolutional network and class-weighted cross-entropy. The official WM-811K train/test assignment and the same classification metrics are retained so the experiment is directly comparable with the Random Forest.
+
+For a quicker smoke run:
+
+```bash
+python -m scripts.train_cnn --epochs 1 --batch-size 256
+```
+
+Outputs are written to `artifacts/cnn/metrics.json` and `artifacts/cnn/model.pt`. CNN results are not hard-coded; run the experiment locally before drawing a model comparison.
+
 ## Test
 
 ```bash
@@ -106,6 +125,12 @@ Similarity is computed from standardized engineered wafer-map features and is pr
 This version proves the end-to-end system contract: validated ingestion, leakage-aware evaluation, persisted model metadata, API inference, explicit prediction review, explainable case retrieval and a human-facing investigation workflow. The nine-feature Random Forest is deliberately retained as an interpretable baseline, not presented as the final classifier.
 
 The next experiment is a spatial model/CNN comparison on the same official split, with class weighting and per-class error analysis. Process drift, SPC and root-cause attribution require separate process or equipment data and are not inferred from wafer maps alone.
+
+## Current modelling boundary
+
+The nine-feature Random Forest is deliberately retained as an interpretable baseline. The CNN tests the hypothesis that spatial representation can recover defect patterns that global aggregate features miss. If the CNN improves macro-F1, the result supports the hypothesis; if it does not, the error analysis should explain which classes remain difficult rather than treating the experiment as a failure.
+
+Process drift, SPC and root-cause attribution require separate process or equipment data and are not inferred from wafer maps alone.
 
 ## Disclaimer
 
