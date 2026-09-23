@@ -7,7 +7,9 @@
 3. `extract_features` converts each variable-size map into nine deterministic signals.
 4. `ModelRegistry` lazily loads the versioned local artifact and aligns features by name.
 5. The prediction endpoint returns the winning class, confidence and all class probabilities.
-6. The command center renders the wafer map and shows model output only when an artifact exists.
+6. A standardized engineered-feature index retrieves similar labelled wafer cases.
+7. A deterministic investigation layer converts the observed pattern into bounded review steps.
+8. The command center separates ground truth, prediction, confidence and evaluation metrics.
 
 ## Training path
 
@@ -24,3 +26,10 @@
 - Generated demo maps exist only to exercise the application without distributing raw data.
 - The API returns HTTP 503 when no model artifact exists; it never substitutes a fake prediction.
 - Equipment telemetry, maintenance events and causal root-cause claims are outside the current data.
+
+## Why the current baseline is not the final model
+
+The serving contract deliberately starts with a small interpretable Random Forest. Its official
+split results show that aggregate geometry is insufficient for several minority spatial patterns.
+The next model can therefore replace the estimator without changing ingestion, evaluation,
+artifact metadata, API schemas or the review workflow.
