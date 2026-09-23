@@ -71,3 +71,42 @@ baseline using the same official split, without changing the evaluation contract
 These results measure labelled wafer-pattern classification. WM-811K does not contain equipment
 telemetry, chamber history, recipes, maintenance events or confirmed physical root causes. The
 investigation assistant therefore provides review hypotheses and similar cases, not causal proof.
+
+
+## Spatial CNN experiment
+
+### Hypothesis
+
+The Random Forest uses nine global engineered features. Those features summarize geometry and failure density but discard the exact spatial arrangement of failing dies. A compact CNN can consume the wafer-map topology directly and may therefore recover patterns such as rings, scratches and localized clusters.
+
+### Experimental contract
+
+- Same labelled WM-811K records
+- Same official train/test assignment
+- Fixed 32x32 nearest-neighbour spatial representation
+- Three convolutional blocks with global average pooling
+- Class-weighted cross-entropy
+- AdamW optimizer
+- Seeded training
+- Accuracy, macro-F1, balanced accuracy and per-class results
+- Random Forest remains the reference baseline
+
+### Results
+
+CNN results are intentionally **not hard-coded before the experiment is run**. Run:
+
+```bash
+python -m scripts.train_cnn
+```
+
+Then inspect:
+
+```text
+artifacts/cnn/metrics.json
+```
+
+The next review should compare macro-F1, balanced accuracy and minority-class recall, then inspect any regressions by class. No model should be selected from accuracy alone.
+
+### Claim boundary
+
+WM-811K supports wafer-pattern classification only. It does not provide equipment telemetry, recipes, chamber histories, maintenance events or confirmed physical root causes.
