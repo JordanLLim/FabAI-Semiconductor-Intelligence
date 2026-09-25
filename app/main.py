@@ -19,10 +19,12 @@ from app.schemas import (
 from src.data.repository import WaferRecord, WaferRepository
 from src.features.wafer import extract_features
 from src.investigation import WaferSimilarityIndex, build_investigation
+from src.models.experiments import load_experiment_summary
 from src.models.registry import ModelRegistry
 
 DATASET_PATH = Path(os.getenv("FABAI_DATASET_PATH", "data/raw/LSWMD.pkl"))
 MODEL_PATH = Path(os.getenv("FABAI_MODEL_PATH", "artifacts/baseline.joblib"))
+CNN_METRICS_PATH = Path(os.getenv("FABAI_CNN_METRICS_PATH", "artifacts/cnn/metrics.json"))
 repository = WaferRepository(DATASET_PATH)
 model_registry = ModelRegistry(MODEL_PATH)
 similarity_index = WaferSimilarityIndex(repository.records)
@@ -79,6 +81,12 @@ def model_evaluation() -> ModelEvaluation:
             detail="No trained model artifact. Run python -m scripts.train on WM-811K first.",
         )
     return ModelEvaluation(**model_registry.evaluation())
+
+
+@app.get("/api/models/experiments")
+def model_experiments() -> dict:
+    baseline_evaluation = model_registry.evaluation() if model_registry.available else None
+    return load_experiment_summary(baseline_evaluation, CNN_METRICS_PATH)
 
 
 @app.get("/api/wafers", response_model=list[WaferSummary])
